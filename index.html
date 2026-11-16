@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NIFTY 50 Options Pricing and Analytics Dashboard</title>
+  
+  <!-- Inter font for clean professional styling -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root {
+      --bg-page: #f8fafc;
+      --bg-card: #ffffff;
+      --border-color: #e2e8f0;
+      --border-subtle: #cbd5e1;
+      
+      --navy-primary: #0f2942;
+      --navy-heading: #1e3a8a;
+      --navy-sub: #334155;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      
+      --accent-blue: #0284c7;
+      --accent-green: #15803d;
+      --accent-green-bg: #f0fdf4;
+      --accent-red: #b91c1c;
+      --accent-red-bg: #fef2f2;
+      --accent-amber: #b45309;
+
+      --radius: 8px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* Header */
+    header {
+      background-color: var(--navy-primary);
+      color: #ffffff;
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .header-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+
+    .header-sub {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    .status-badge {
+      font-size: 12px;
+      background-color: rgba(255, 255, 255, 0.1);
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #22c55e;
+    }
+
+    /* Top Navigation Tabs */
+    nav.nav-tabs {
+      background-color: #ffffff;
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 32px;
+      display: flex;
+      gap: 24px;
+    }
+
+    .nav-tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      padding: 12px 4px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .nav-tab-btn:hover {
+      color: var(--navy-heading);
+    }
+
+    .nav-tab-btn.active {
+      color: var(--navy-heading);
+      border-bottom-color: var(--navy-heading);
+    }
+
+    /* Educational Disclaimer */
+    .disclaimer-banner {
+      background-color: #fffbeb;
+      border-bottom: 1px solid #fef3c7;
+      padding: 10px 32px;
+      font-size: 12px;
+      color: var(--accent-amber);
+    }
+
+    /* Main Container */
+    main {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 24px 32px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Headings & Cards */
+    h2.section-heading {
+      color: var(--navy-heading);
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* 1. Main Dashboard (KPIs) */
+    .dashboard-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 16px;
+    }
+
+    .kpi-card {
+      background-color: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .kpi-val {
+      font-size: 24px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--navy-primary);
+      margin-top: 4px;
+    }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Two-column layout */
+    .grid-two-column {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 960px) {
+      .grid-two-column {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* 2. Option Pricing Calculator Form */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--navy-sub);
+    }
+
+    input[type="number"], select, input[type="text"] {
+      background-color: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--text-main);
+    }
+
+    input[type="number"]:focus, select:focus, input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+    }
+
+    .btn {
+      background-color: var(--navy-primary);
+      color: #ffffff;
+      border: none;
+      border-radius: 4px;
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s ease;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background-color: var(--navy-heading);
+    }
+
+    .btn-secondary {
+      background-color: #f1f5f9;
+      color: var(--navy-sub);
+      border: 1px solid #cbd5e1;
+    }
+
+    .btn-secondary:hover {
+      background-color: #e2e8f0;
+      color: var(--navy-primary);
+    }
+
+    .btn-success {
+      background-color: var(--accent-green);
+    }
+
+    .btn-success:hover {
+      background-color: #166534;
+    }
+
+    /* Presets */
+    .presets-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .btn-preset {
+      background-color: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--navy-sub);
+      cursor: pointer;
+    }
+
+    .btn-preset:hover {
+      background-color: var(--navy-primary);
+      color: #ffffff;
+      border-color: var(--navy-primary);
+    }
+
+    /* 3. Results Cards */
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .result-card {
+      background-color: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+    }
+
+    .result-card.highlight {
+      background-color: #f0fdf4;
+      border-color: #bbf7d0;
+      grid-column: 1 / -1;
+    }
+
+    .result-card-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .result-card-val {
+      font-size: 20px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--navy-primary);
+      margin-top: 4px;
+    }
+
+    .result-card-val.large-highlight {
+      font-size: 28px;
+      color: var(--accent-green);
+    }
+
+    /* 4. Comparison Cards */
+    .comp-cards-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .comp-cards-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .comp-card {
+      background-color: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+
+    .comp-title {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .comp-val {
+      font-size: 20px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--navy-primary);
+      margin-top: 4px;
+    }
+
+    /* Chart Container */
+    .chart-container {
+      position: relative;
+      height: 220px;
+      width: 100%;
+    }
+
+    /* Option Chain Table */
+    .table-container {
+      overflow-x: auto;
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+    }
+
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    table.data-table th {
+      background-color: #f1f5f9;
+      color: var(--navy-sub);
+      font-weight: 600;
+      font-size: 12px;
+      padding: 10px 14px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    table.data-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    table.data-table tr:hover {
+      background-color: #f8fafc;
+      cursor: pointer;
+    }
+
+    table.data-table tr.selected-row {
+      background-color: #eff6ff !important;
+      border-left: 4px solid var(--accent-blue);
+    }
+
+    .badge-ce {
+      background-color: var(--accent-green-bg);
+      color: var(--accent-green);
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .badge-pe {
+      background-color: var(--accent-red-bg);
+      color: var(--accent-red);
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    /* Upload Box & Stats */
+    .upload-zone {
+      border: 2px dashed #cbd5e1;
+      border-radius: var(--radius);
+      padding: 24px;
+      background-color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      text-align: center;
+    }
+
+    .upload-zone.dragover {
+      border-color: var(--accent-blue);
+      background-color: #eff6ff;
+    }
+
+    .download-buttons-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .stats-summary-bar {
+      display: flex;
+      gap: 20px;
+      padding: 12px 18px;
+      background-color: #f1f5f9;
+      border-radius: var(--radius);
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+    }
+
+    .stat-pill strong {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+    }
+
+    .status-badge-ok {
+      background-color: var(--accent-green-bg);
+      color: var(--accent-green);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .status-badge-err {
+      background-color: var(--accent-red-bg);
+      color: var(--accent-red);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* Footer */
+    footer {
+      background-color: #ffffff;
+      border-top: 1px solid var(--border-color);
+      padding: 16px 32px;
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header>
+    <div>
+      <h1 class="header-title">NIFTY 50 Options Pricing and Analytics Dashboard</h1>
+      <p class="header-sub">Academic Assignment • CRR Binomial Option Pricing in Rust</p>
+    </div>
+    <div class="status-badge">
+      <span class="dot"></span>
+      <span id="backendStatus">Rust Backend: Connected</span>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs">
+    <button class="nav-tab-btn active" onclick="switchTab('tab-calculator')">Calculator & Option Chain</button>
+    <button class="nav-tab-btn" onclick="switchTab('tab-upload')">Upload Dataset & Batch Calculation</button>
+  </nav>
+
+  <!-- Educational Disclaimer Banner -->
+  <div class="disclaimer-banner">
+    <strong>Academic Notice:</strong> All market benchmarks and options data are clearly labelled educational sample data. All CRR Binomial Model calculations are performed in Rust.
+  </div>
+
+  <main>
+
+    <!-- TAB 1: Calculator, Results, Comparison & Option Chain -->
+    <div id="tab-calculator" class="tab-content">
+
+      <!-- SECTION 1: Main Dashboard Overview -->
+      <section style="margin-bottom: 24px;">
+        <h2 class="section-heading">Main Dashboard Overview</h2>
+        <div class="dashboard-kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">NIFTY 50 Spot Price</div>
+            <div class="kpi-val" id="kpiSpotPrice">₹24,530.90</div>
+            <div class="kpi-sub">Benchmark Sample Index Value</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-label">Selected Option Type</div>
+            <div class="kpi-val" id="kpiOptionType">Call (CE)</div>
+            <div class="kpi-sub">European Contract</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-label">Strike Price</div>
+            <div class="kpi-val" id="kpiStrikePrice">₹24,500.00</div>
+            <div class="kpi-sub" id="kpiStrikeSub">Selected Contract Strike</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-label">Expiry Date</div>
+            <div class="kpi-val" id="kpiExpiryDate" style="font-size: 20px;">14 Days (28-Nov)</div>
+            <div class="kpi-sub">Monthly Expiry Cycle</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2 & 3: Calculator and Results Grid -->
+      <div class="grid-two-column" style="margin-bottom: 24px;">
+
+        <!-- Option Pricing Calculator Form -->
+        <section class="card">
+          <h2 class="section-heading">Option Pricing Calculator</h2>
+
+          <div style="margin-bottom: 14px;">
+            <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Sample Presets:</label>
+            <div class="presets-row">
+              <button type="button" class="btn-preset" onclick="setPreset('ATM_CE')">ATM Call (24,500 CE)</button>
+              <button type="button" class="btn-preset" onclick="setPreset('ATM_PE')">ATM Put (24,500 PE)</button>
+              <button type="button" class="btn-preset" onclick="setPreset('OTM_CE')">OTM Call (24,800 CE)</button>
+            </div>
+          </div>
+
+          <form id="calculatorForm" onsubmit="calculateSinglePrice(event)">
+            <div class="form-grid">
+
+              <div class="form-group full-width">
+                <label for="inputOptionType">Option Type</label>
+                <select id="inputOptionType" onchange="syncDashboardLabels()">
+                  <option value="CE">Call Option (CE)</option>
+                  <option value="PE">Put Option (PE)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="inputSpot">Spot Price (S)</label>
+                <input type="number" step="0.05" id="inputSpot" value="24530.90" required oninput="syncDashboardLabels()">
+              </div>
+
+              <div class="form-group">
+                <label for="inputStrike">Strike Price (K)</label>
+                <input type="number" step="50" id="inputStrike" value="24500" required oninput="syncDashboardLabels()">
+              </div>
+
+              <div class="form-group">
+                <label for="inputVol">Volatility (σ in %)</label>
+                <input type="number" step="0.1" id="inputVol" value="14.0" required>
+              </div>
+
+              <div class="form-group">
+                <label for="inputDays">Days to Expiry</label>
+                <input type="number" step="1" id="inputDays" value="14" required oninput="syncDashboardLabels()">
+              </div>
+
+              <div class="form-group">
+                <label for="inputRate">Risk-Free Rate (r in %)</label>
+                <input type="number" step="0.1" id="inputRate" value="6.5" required>
+              </div>
+
+              <div class="form-group">
+                <label for="inputDiv">Dividend Yield (q in %)</label>
+                <input type="number" step="0.1" id="inputDiv" value="1.2" required>
+              </div>
+
+              <div class="form-group full-width">
+                <label for="inputSteps">Number of Steps (N)</label>
+                <input type="number" step="5" id="inputSteps" value="50" min="1" max="500" required>
+              </div>
+
+              <div class="form-group full-width">
+                <label for="inputActualPremium">Actual / Sample Option Premium (₹)</label>
+                <input type="number" step="0.05" id="inputActualPremium" value="275.50" placeholder="e.g. 275.50">
+              </div>
+
+              <div class="form-group full-width">
+                <button type="submit" class="btn" style="width: 100%; padding: 11px;">
+                  Calculate Price (Rust Engine)
+                </button>
+              </div>
+
+            </div>
+          </form>
+        </section>
+
+        <!-- Calculation Results Display (Only Requested Cards) -->
+        <section class="card">
+          <h2 class="section-heading">Calculation Results (Rust Model)</h2>
+
+          <div class="results-grid">
+
+            <div class="result-card highlight">
+              <div class="result-card-title">Theoretical Option Premium</div>
+              <div class="result-card-val large-highlight" id="resTheoretical">₹--</div>
+              <div style="font-size: 11px; color: var(--accent-green); margin-top: 4px;">
+                Calculated via CRR Binomial Model in Rust
+              </div>
+            </div>
+
+            <div class="result-card">
+              <div class="result-card-title">Option Type</div>
+              <div class="result-card-val" id="resOptionType">Call (CE)</div>
+            </div>
+
+            <div class="result-card">
+              <div class="result-card-title">Up Factor (u)</div>
+              <div class="result-card-val" id="resUpFactor">--</div>
+            </div>
+
+            <div class="result-card">
+              <div class="result-card-title">Down Factor (d)</div>
+              <div class="result-card-val" id="resDownFactor">--</div>
+            </div>
+
+            <div class="result-card" style="grid-column: 1 / -1;">
+              <div class="result-card-title">Risk-Neutral Probability (p)</div>
+              <div class="result-card-val" id="resProb">--</div>
+            </div>
+
+          </div>
+
+          <div style="margin-top: 16px; background-color: #f8fafc; border-left: 3px solid var(--accent-blue); padding: 10px 14px; font-size: 12px; color: var(--text-muted); border-radius: 4px;">
+            <strong>Backend Execution:</strong> Up/down factors, risk-neutral probability $p$, and backward induction are computed in Rust.
+          </div>
+        </section>
+
+      </div>
+
+      <!-- SECTION 3: Premium Comparison -->
+      <section class="card" style="margin-bottom: 24px;">
+        <h2 class="section-heading">Premium Comparison (Theoretical vs. Actual)</h2>
+
+        <div class="comp-cards-row">
+          <div class="comp-card">
+            <div class="comp-title">Theoretical Premium</div>
+            <div class="comp-val" id="compTheoretical" style="color: var(--accent-green);">₹--</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Rust CRR Model</div>
+          </div>
+
+          <div class="comp-card">
+            <div class="comp-title">Actual / Sample Premium</div>
+            <div class="comp-val" id="compActual" style="color: var(--accent-blue);">₹--</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Entered Value</div>
+          </div>
+
+          <div class="comp-card">
+            <div class="comp-title">Absolute Difference</div>
+            <div class="comp-val" id="compAbsDiff">₹--</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">|Theoretical - Actual|</div>
+          </div>
+
+          <div class="comp-card">
+            <div class="comp-title">Percentage Difference</div>
+            <div class="comp-val" id="compPctDiff">--%</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Divergence %</div>
+          </div>
+        </div>
+
+        <div style="font-size: 13px; font-weight: 600; color: var(--navy-heading); margin-bottom: 6px;">
+          Premium Comparison Bar Chart
+        </div>
+        <div class="chart-container">
+          <canvas id="comparisonBarChart"></canvas>
+        </div>
+      </section>
+
+      <!-- SECTION 4: NIFTY 50 Option Chain -->
+      <section class="card">
+        <h2 class="section-heading">NIFTY 50 Option Chain</h2>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+          Click any row to select the strike and load its parameters into the calculator.
+        </p>
+
+        <!-- Filters -->
+        <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; background-color: #f1f5f9; padding: 10px 16px; border-radius: var(--radius);">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <label for="filterChainType">Display:</label>
+            <select id="filterChainType" onchange="renderOptionChainTable()">
+              <option value="ALL">Calls & Puts</option>
+              <option value="CE">Calls Only (CE)</option>
+              <option value="PE">Puts Only (PE)</option>
+            </select>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <label for="filterChainExpiry">Expiry:</label>
+            <select id="filterChainExpiry" onchange="renderOptionChainTable()">
+              <option value="2024-11-28">28-Nov-2024 (Monthly)</option>
+            </select>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <label for="filterChainStrike">Search Strike:</label>
+            <input type="text" id="filterChainStrike" placeholder="e.g. 24500" style="width: 110px;" oninput="renderOptionChainTable()">
+          </div>
+
+          <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px;" onclick="resetChainFilters()">Reset</button>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table" id="optionChainTable">
+            <thead>
+              <tr>
+                <th>Strike Price (₹)</th>
+                <th>CE Premium (Call)</th>
+                <th>PE Premium (Put)</th>
+                <th>Expiry Date</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="optionChainTbody">
+              <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 16px;">Loading option chain...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- TAB 2: Upload Dataset & Batch Calculation -->
+    <div id="tab-upload" class="tab-content" style="display: none;">
+
+      <!-- SECTION 5: Dataset Upload Feature -->
+      <section class="card" style="margin-bottom: 24px;">
+        <h2 class="section-heading">Upload Dataset for Automatic Calculation</h2>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
+          Upload a CSV containing multiple option records. The Rust backend will independently calculate the Up Factor, Down Factor, Risk-Neutral Probability, and Theoretical Premium for every row.
+        </p>
+
+        <!-- Upload Dropzone -->
+        <div class="upload-zone" id="uploadZone">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--navy-heading);">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <div>
+            <strong>Drag and drop your CSV file here</strong> or click below to choose a file
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="file" id="csvFileInput" accept=".csv" style="display: none;" onchange="handleFileSelected(event)">
+            <button class="btn" onclick="document.getElementById('csvFileInput').click()">Choose CSV File</button>
+            <span id="selectedFileName" style="font-size: 12px; color: var(--text-muted);">No file selected</span>
+            <button class="btn btn-success" id="btnUploadProcess" onclick="uploadAndProcessCsv()" disabled>
+              Upload & Process Dataset
+            </button>
+          </div>
+        </div>
+
+        <!-- Download Sample Datasets & Template Buttons -->
+        <div style="margin-top: 16px;">
+          <label style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Download Ready-to-Use Sample Datasets & Templates:</label>
+          <div class="download-buttons-bar">
+            <a href="/api/download/sample?type=combined" class="btn btn-secondary">
+              Download Sample Dataset (Combined CE & PE)
+            </a>
+            <a href="/api/download/sample?type=ce" class="btn btn-secondary">
+              Download NIFTY 50 CE Dataset
+            </a>
+            <a href="/api/download/sample?type=pe" class="btn btn-secondary">
+              Download NIFTY 50 PE Dataset
+            </a>
+            <a href="/api/download/sample?type=template" class="btn btn-secondary">
+              Download Empty CSV Template
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 6: Processed Dataset Table & Download -->
+      <section class="card" id="processedSection" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+          <h2 class="section-heading" style="margin-bottom: 0;">Processed Dataset Results</h2>
+          <button class="btn btn-success" onclick="downloadProcessedResultsCsv()">
+            Download Calculated Results (CSV)
+          </button>
+        </div>
+
+        <!-- Batch Summary Counters -->
+        <div class="stats-summary-bar">
+          <div class="stat-pill">Total Records: <strong id="statTotalRec">0</strong></div>
+          <div class="stat-pill" style="color: var(--accent-green);">Successfully Processed: <strong id="statSuccessRec">0</strong></div>
+          <div class="stat-pill" style="color: var(--accent-red);">Records with Errors: <strong id="statErrorRec">0</strong></div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+          <table class="data-table" id="processedDataTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Option Type</th>
+                <th>Spot Price</th>
+                <th>Strike Price</th>
+                <th>Expiry Date</th>
+                <th>Actual Premium</th>
+                <th>Up Factor (u)</th>
+                <th>Down Factor (d)</th>
+                <th>Risk-Neutral Prob (p)</th>
+                <th>Theoretical Premium</th>
+                <th>Absolute Diff</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="processedTbody">
+              <!-- Dynamically populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p><strong>NIFTY 50 Options Pricing and Analytics Dashboard</strong> • Academic Assignment</p>
+    <p style="margin-top: 4px;">Backend: Rust (Axum + Tokio + Serde) • Frontend: HTML/CSS/JavaScript (Chart.js)</p>
+  </footer>
+
+  <!-- Application Logic -->
+  <script>
+    let comparisonChart = null;
+    let optionChainData = [];
+    let processedResults = null;
+    let selectedFileContent = null;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      syncDashboardLabels();
+      await loadOptionChain();
+      calculateSinglePrice();
+    });
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+      document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).style.display = 'block';
+
+      if (tabId === 'tab-calculator') {
+        document.querySelectorAll('.nav-tab-btn')[0].classList.add('active');
+      } else {
+        document.querySelectorAll('.nav-tab-btn')[1].classList.add('active');
+      }
+    }
+
+    function syncDashboardLabels() {
+      const type = document.getElementById('inputOptionType').value;
+      const spot = parseFloat(document.getElementById('inputSpot').value) || 24530.90;
+      const strike = parseFloat(document.getElementById('inputStrike').value) || 24500;
+      const days = parseInt(document.getElementById('inputDays').value) || 14;
+
+      document.getElementById('kpiSpotPrice').textContent = `₹${spot.toFixed(2)}`;
+      document.getElementById('kpiOptionType').textContent = type === 'CE' ? 'Call (CE)' : 'Put (PE)';
+      document.getElementById('kpiStrikePrice').textContent = `₹${strike.toFixed(2)}`;
+      document.getElementById('kpiExpiryDate').textContent = `${days} Days`;
+      document.getElementById('kpiStrikeSub').textContent = `Selected Contract Strike`;
+    }
+
+    function setPreset(presetKey) {
+      document.getElementById('inputSpot').value = "24530.90";
+      document.getElementById('inputVol').value = "14.0";
+      document.getElementById('inputDays').value = "14";
+      document.getElementById('inputRate').value = "6.5";
+      document.getElementById('inputDiv').value = "1.2";
+      document.getElementById('inputSteps').value = "50";
+
+      if (presetKey === 'ATM_CE') {
+        document.getElementById('inputOptionType').value = 'CE';
+        document.getElementById('inputStrike').value = "24500";
+        document.getElementById('inputActualPremium').value = "275.50";
+      } else if (presetKey === 'ATM_PE') {
+        document.getElementById('inputOptionType').value = 'PE';
+        document.getElementById('inputStrike').value = "24500";
+        document.getElementById('inputActualPremium').value = "212.00";
+      } else if (presetKey === 'OTM_CE') {
+        document.getElementById('inputOptionType').value = 'CE';
+        document.getElementById('inputStrike').value = "24800";
+        document.getElementById('inputActualPremium').value = "104.60";
+      }
+
+      syncDashboardLabels();
+      highlightChainRow(parseFloat(document.getElementById('inputStrike').value));
+      calculateSinglePrice();
+    }
+
+    // 1. Single Option Calculation
+    async function calculateSinglePrice(event) {
+      if (event) event.preventDefault();
+
+      const optionType = document.getElementById('inputOptionType').value;
+      const spot = parseFloat(document.getElementById('inputSpot').value);
+      const strike = parseFloat(document.getElementById('inputStrike').value);
+      const vol = parseFloat(document.getElementById('inputVol').value);
+      const days = parseFloat(document.getElementById('inputDays').value);
+      const rate = parseFloat(document.getElementById('inputRate').value);
+      const divYield = parseFloat(document.getElementById('inputDiv').value);
+      const steps = parseInt(document.getElementById('inputSteps').value);
+      const actualPremiumVal = document.getElementById('inputActualPremium').value.trim();
+      const actualPremium = actualPremiumVal !== '' ? parseFloat(actualPremiumVal) : null;
+
+      const params = new URLSearchParams({
+        option_type: optionType,
+        spot: spot.toString(),
+        strike: strike.toString(),
+        volatility: (vol / 100).toString(),
+        days_to_expiry: days.toString(),
+        risk_free_rate: (rate / 100).toString(),
+        dividend_yield: (divYield / 100).toString(),
+        steps: steps.toString(),
+      });
+
+      if (actualPremium !== null && !isNaN(actualPremium)) {
+        params.append('actual_premium', actualPremium.toString());
+      }
+
+      try {
+        const res = await fetch(`/api/price?${params.toString()}`);
+        if (!res.ok) throw new Error("Calculation failed");
+        const data = await res.json();
+
+        // Update Results Display
+        document.getElementById('resTheoretical').textContent = `₹${data.theoretical_premium.toFixed(2)}`;
+        document.getElementById('resOptionType').textContent = data.option_type === 'CE' ? 'Call (CE)' : 'Put (PE)';
+        document.getElementById('resUpFactor').textContent = data.up_factor.toFixed(4);
+        document.getElementById('resDownFactor').textContent = data.down_factor.toFixed(4);
+        document.getElementById('resProb').textContent = data.risk_neutral_probability.toFixed(4);
+
+        // Update Comparison
+        document.getElementById('compTheoretical').textContent = `₹${data.theoretical_premium.toFixed(2)}`;
+        if (data.actual_premium !== null) {
+          document.getElementById('compActual').textContent = `₹${data.actual_premium.toFixed(2)}`;
+          document.getElementById('compAbsDiff').textContent = `₹${data.absolute_difference.toFixed(2)}`;
+          document.getElementById('compPctDiff').textContent = `${data.percentage_difference.toFixed(2)}%`;
+        } else {
+          document.getElementById('compActual').textContent = '₹--';
+          document.getElementById('compAbsDiff').textContent = '₹--';
+          document.getElementById('compPctDiff').textContent = '--%';
+        }
+
+        renderComparisonChart(data.theoretical_premium, data.actual_premium || 0);
+
+      } catch (err) {
+        console.error("Calculation Error:", err);
+      }
+    }
+
+    function renderComparisonChart(theoretical, actual) {
+      const ctx = document.getElementById('comparisonBarChart').getContext('2d');
+      if (comparisonChart) comparisonChart.destroy();
+
+      comparisonChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Theoretical Premium (Rust CRR)', 'Actual / Sample Premium'],
+          datasets: [{
+            label: 'Premium (₹)',
+            data: [theoretical, actual],
+            backgroundColor: ['#15803d', '#0284c7'],
+            borderRadius: 4,
+            barThickness: 50,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { callback: v => `₹${v}` } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    // 2. Option Chain Handling
+    async function loadOptionChain() {
+      try {
+        const res = await fetch('/api/option-chain');
+        if (!res.ok) throw new Error("Failed to load option chain");
+        optionChainData = await res.json();
+        renderOptionChainTable();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderOptionChainTable() {
+      const filterType = document.getElementById('filterChainType').value;
+      const searchStrike = document.getElementById('filterChainStrike').value.trim();
+      const currentSelectedStrike = parseFloat(document.getElementById('inputStrike').value);
+
+      const tbody = document.getElementById('optionChainTbody');
+      tbody.innerHTML = '';
+
+      let filtered = optionChainData;
+      if (searchStrike !== '') {
+        const kSearch = parseFloat(searchStrike);
+        if (!isNaN(kSearch)) {
+          filtered = filtered.filter(item => item.strike_price.toString().includes(searchStrike));
+        }
+      }
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 16px;">No strike matches the filter.</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(item => {
+        const tr = document.createElement('tr');
+        if (Math.abs(item.strike_price - currentSelectedStrike) < 1e-3) {
+          tr.className = 'selected-row';
+        }
+
+        let ceDisplay = `₹${item.ce_premium.toFixed(2)}`;
+        let peDisplay = `₹${item.pe_premium.toFixed(2)}`;
+
+        if (filterType === 'CE') peDisplay = '<span style="color: var(--text-muted);">-</span>';
+        if (filterType === 'PE') ceDisplay = '<span style="color: var(--text-muted);">-</span>';
+
+        tr.innerHTML = `
+          <td><strong>₹${item.strike_price.toLocaleString()}</strong></td>
+          <td><span class="badge-ce">CE</span> ${ceDisplay}</td>
+          <td><span class="badge-pe">PE</span> ${peDisplay}</td>
+          <td>${item.expiry_date}</td>
+          <td>
+            <button class="btn btn-secondary" style="padding: 3px 8px; font-size: 11px;" onclick="selectChainStrike(${item.strike_price}, ${item.ce_premium}, ${item.pe_premium})">
+              Select
+            </button>
+          </td>
+        `;
+
+        tr.onclick = (e) => {
+          if (e.target.tagName !== 'BUTTON') {
+            selectChainStrike(item.strike_price, item.ce_premium, item.pe_premium);
+          }
+        };
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function selectChainStrike(strike, cePrem, pePrem) {
+      document.getElementById('inputStrike').value = strike;
+      const type = document.getElementById('inputOptionType').value;
+      document.getElementById('inputActualPremium').value = type === 'CE' ? cePrem.toFixed(2) : pePrem.toFixed(2);
+      syncDashboardLabels();
+      renderOptionChainTable();
+      calculateSinglePrice();
+    }
+
+    function highlightChainRow(strike) {
+      renderOptionChainTable();
+    }
+
+    function resetChainFilters() {
+      document.getElementById('filterChainType').value = 'ALL';
+      document.getElementById('filterChainStrike').value = '';
+      renderOptionChainTable();
+    }
+
+    // 3. Dataset Upload & Automatic Calculation
+    function handleFileSelected(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      document.getElementById('selectedFileName').textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+      document.getElementById('btnUploadProcess').disabled = false;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        selectedFileContent = e.target.result;
+      };
+      reader.readAsText(file);
+    }
+
+    async function uploadAndProcessCsv() {
+      if (!selectedFileContent) {
+        alert("Please choose a CSV file first.");
+        return;
+      }
+
+      const btn = document.getElementById('btnUploadProcess');
+      btn.textContent = "Processing in Rust...";
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/process-dataset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ csv_content: selectedFileContent }),
+        });
+
+        if (!res.ok) {
+          const errJson = await res.json().catch(() => ({}));
+          throw new Error(errJson.error || `HTTP ${res.status}`);
+        }
+
+        processedResults = await res.json();
+        renderProcessedTable(processedResults);
+      } catch (err) {
+        alert(`Error processing dataset: ${err.message}`);
+      } finally {
+        btn.textContent = "Upload & Process Dataset";
+        btn.disabled = false;
+      }
+    }
+
+    function renderProcessedTable(data) {
+      document.getElementById('processedSection').style.display = 'block';
+      document.getElementById('statTotalRec').textContent = data.total_records;
+      document.getElementById('statSuccessRec').textContent = data.success_records;
+      document.getElementById('statErrorRec').textContent = data.error_records;
+
+      const tbody = document.getElementById('processedTbody');
+      tbody.innerHTML = '';
+
+      data.rows.forEach(r => {
+        const tr = document.createElement('tr');
+        const isOk = r.status === 'SUCCESS';
+
+        tr.innerHTML = `
+          <td>${r.row_number}</td>
+          <td>${r.date || '--'}</td>
+          <td><span class="${r.option_type === 'CE' ? 'badge-ce' : 'badge-pe'}">${r.option_type}</span></td>
+          <td>${r.spot_price !== null ? '₹' + r.spot_price.toFixed(2) : '--'}</td>
+          <td><strong>${r.strike_price !== null ? '₹' + r.strike_price.toLocaleString() : '--'}</strong></td>
+          <td>${r.expiry_date || '--'}</td>
+          <td>${r.actual_premium !== null ? '₹' + r.actual_premium.toFixed(2) : '--'}</td>
+          <td>${r.up_factor !== null ? r.up_factor.toFixed(4) : '--'}</td>
+          <td>${r.down_factor !== null ? r.down_factor.toFixed(4) : '--'}</td>
+          <td>${r.risk_neutral_probability !== null ? r.risk_neutral_probability.toFixed(4) : '--'}</td>
+          <td><strong style="color: var(--accent-green);">${r.theoretical_premium !== null ? '₹' + r.theoretical_premium.toFixed(2) : '--'}</strong></td>
+          <td>${r.absolute_difference !== null ? '₹' + r.absolute_difference.toFixed(2) : '--'}</td>
+          <td>
+            ${isOk 
+              ? '<span class="status-badge-ok">SUCCESS</span>' 
+              : `<span class="status-badge-err" title="${r.error_message}">ERROR</span>`}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Scroll to processed table
+      document.getElementById('processedSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // 4. Download Processed Results as CSV
+    function downloadProcessedResultsCsv() {
+      if (!processedResults || !processedResults.rows || processedResults.rows.length === 0) {
+        alert("No processed results available to download.");
+        return;
+      }
+
+      const headers = [
+        "Date",
+        "Option_Type",
+        "Spot_Price",
+        "Strike_Price",
+        "Expiry_Date",
+        "Actual_Premium",
+        "Up_Factor",
+        "Down_Factor",
+        "Risk_Neutral_Probability",
+        "Theoretical_Premium",
+        "Absolute_Difference",
+        "Percentage_Difference",
+        "Calculation_Status",
+        "Error_Message"
+      ];
+
+      const csvLines = [headers.join(",")];
+
+      processedResults.rows.forEach(r => {
+        const row = [
+          r.date || "",
+          r.option_type || "",
+          r.spot_price !== null ? r.spot_price : "",
+          r.strike_price !== null ? r.strike_price : "",
+          r.expiry_date || "",
+          r.actual_premium !== null ? r.actual_premium : "",
+          r.up_factor !== null ? r.up_factor : "",
+          r.down_factor !== null ? r.down_factor : "",
+          r.risk_neutral_probability !== null ? r.risk_neutral_probability : "",
+          r.theoretical_premium !== null ? r.theoretical_premium : "",
+          r.absolute_difference !== null ? r.absolute_difference : "",
+          r.percentage_difference !== null ? r.percentage_difference : "",
+          r.status,
+          r.error_message ? `"${r.error_message.replace(/"/g, '""')}"` : ""
+        ];
+        csvLines.push(row.join(","));
+      });
+
+      const csvBlob = new Blob([csvLines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+      const downloadLink = document.createElement("a");
+      const url = URL.createObjectURL(csvBlob);
+      downloadLink.setAttribute("href", url);
+      downloadLink.setAttribute("download", "calculated_nifty50_results.csv");
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    }
+  </script>
+
+</body>
+</html>
